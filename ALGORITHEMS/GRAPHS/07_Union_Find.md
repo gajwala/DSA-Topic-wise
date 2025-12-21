@@ -21,6 +21,11 @@ Or imagine connected islands:
 - Building bridges connects islands
 - You can quickly check if two islands are connected
 
+## 📝 PsudoCode
+- Find Altimate parent of u and V means pu and pv
+- Find Rank of pu and pv
+- Connect Smaller rank to larger rank always
+
 ## 📝 Algorithm Steps
 
 ### Core Operations:
