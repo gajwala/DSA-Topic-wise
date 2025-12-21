@@ -25,6 +25,7 @@ Or imagine connected islands:
 - Find Altimate parent of u and V means pu and pv
 - Find Rank of pu and pv
 - Connect Smaller rank to larger rank always
+- The Rank can not be reduced while path compression
 
 ## 📝 Algorithm Steps
 
