@@ -41,91 +41,71 @@ Or consider course prerequisites:
 ## 💻 Implementation
 
 ### JavaScript Implementation (DFS-based)
+
+### 1. Topological Sort (DFS-based)
+Linear ordering of vertices in DAG.
+
 ```javascript
-/**
- * Topological sort using DFS
- * @param {Object} graph - Adjacency list representation
- * @returns {Array|null} - Topological order or null if cycle exists
- */
-function topologicalSortDFS(graph) {
-  const visited = new Set();
-  const recStack = new Set(); // For cycle detection
-  const result = [];
-
-  function dfs(vertex) {
-    visited.add(vertex);
-    recStack.add(vertex);
-
-    for (const neighbor of (graph[vertex] || [])) {
-      if (!visited.has(neighbor)) {
-        if (!dfs(neighbor)) return false;
-      } else if (recStack.has(neighbor)) {
-        return false; // Cycle detected
-      }
+function topologicalSort(graph) {
+    const visited = new Set();
+    const stack = [];
+    
+    function dfs(v) {
+        visited.add(v);
+        
+        for (let { node: neighbor } of graph.adjList.get(v)) {
+            if (!visited.has(neighbor)) {
+                dfs(neighbor);
+            }
+        }
+        
+        stack.push(v);
     }
-
-    recStack.delete(vertex);
-    result.push(vertex); // Add after exploring all descendants
-    return true;
-  }
-
-  // Visit all vertices
-  for (const vertex in graph) {
-    if (!visited.has(vertex)) {
-      if (!dfs(vertex)) {
-        return null; // Cycle exists
-      }
+    
+    for (let i = 0; i < graph.V; i++) {
+        if (!visited.has(i)) {
+            dfs(i);
+        }
     }
-  }
-
-  return result.reverse(); // Reverse to get topological order
+    
+    return stack.reverse();
 }
+```
 
+### 2. Kahn's Algorithm (Topological Sort using BFS)
 
-/**
- * Topological sort using Kahn's algorithm (BFS-based)
- */
-function topologicalSortKahn(graph) {
-  const inDegree = {};
-  const result = [];
-
-  // Initialize in-degree for all vertices
-  for (const vertex in graph) {
-    if (!inDegree.hasOwnProperty(vertex)) {
-      inDegree[vertex] = 0;
+```javascript
+function kahnsAlgorithm(graph) {
+    const inDegree = Array(graph.V).fill(0);
+    
+    // Calculate in-degrees
+    for (let u = 0; u < graph.V; u++) {
+        for (let { node: v } of graph.adjList.get(u)) {
+            inDegree[v]++;
+        }
     }
-    for (const neighbor of graph[vertex]) {
-      inDegree[neighbor] = (inDegree[neighbor] || 0) + 1;
+    
+    const queue = [];
+    for (let i = 0; i < graph.V; i++) {
+        if (inDegree[i] === 0) queue.push(i);
     }
-  }
-
-  // Queue of vertices with in-degree 0
-  const queue = [];
-  for (const vertex in inDegree) {
-    if (inDegree[vertex] === 0) {
-      queue.push(vertex);
+    
+    const result = [];
+    while (queue.length > 0) {
+        const u = queue.shift();
+        result.push(u);
+        
+        for (let { node: v } of graph.adjList.get(u)) {
+            inDegree[v]--;
+            if (inDegree[v] === 0) queue.push(v);
+        }
     }
-  }
-
-  while (queue.length > 0) {
-    const vertex = queue.shift();
-    result.push(vertex);
-
-    // Decrease in-degree of neighbors
-    for (const neighbor of (graph[vertex] || [])) {
-      inDegree[neighbor]--;
-      if (inDegree[neighbor] === 0) {
-        queue.push(neighbor);
-      }
-    }
-  }
-
-  // Check if all vertices were processed
-  const totalVertices = Object.keys(inDegree).length;
-  return result.length === totalVertices ? result : null;
+    
+    // If result doesn't contain all vertices, graph has cycle
+    return result.length === graph.V ? result : null;
 }
-
-
+```
+```javascript
 /**
  * Course Schedule - Can finish all courses?
  * LeetCode 207
