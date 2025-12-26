@@ -90,9 +90,7 @@ function bellmanFordWithPath(edges, numVertices, source) {
   }
 
   // Check for negative cycles
-  const negativ
-
-eCycleVertices = new Set();
+  const negativeCycleVertices = new Set();
   for (const [u, v, weight] of edges) {
     if (distances[u] !== Infinity && distances[u] + weight < distances[v]) {
       negativeCycleVertices.add(v);
