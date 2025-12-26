@@ -4,6 +4,8 @@
 
 The Bellman-Ford Algorithm finds the shortest path from a single source vertex to all other vertices in a weighted graph. Unlike Dijkstra's algorithm, Bellman-Ford **can handle negative edge weights** and can **detect negative cycles**.
 
+**The Bellman-Ford Algorithm only works for Directed graph and if un directed graphs is there then Bellman-Ford Algorithm first will convert to directed like u to v and  v to u**
+
 Named after Richard Bellman and Lester Ford Jr., who published it independently in the 1950s.
 
 ## 🎯 Intuition
