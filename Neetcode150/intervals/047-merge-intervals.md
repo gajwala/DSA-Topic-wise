@@ -49,32 +49,22 @@ Sort intervals by start time. Then merge consecutive overlapping intervals by co
  * @return {number[][]}
  */
 function merge(intervals) {
-    if (intervals.length <= 1) {
-        return intervals;
+   if (intervals.length === 0) return intervals;
+
+  intervals.sort((a, b) => a[0] - b[0]);
+
+  let res = [intervals[0]];
+
+  for (let i = 0; i < intervals.length; i++) {
+    let currentInterval = intervals[i];
+    let lastInterval = res[res.length - 1];
+    if (currentInterval[0] <= lastInterval[1]) {
+      lastInterval[1] = Math.max(currentInterval[1], lastInterval[1]);
+    } else {
+      res.push(currentInterval);
     }
-    
-    // Sort by start time
-    intervals.sort((a, b) => a[0] - b[0]);
-    
-    const result = [];
-    let current = intervals[0];
-    
-    for (let i = 1; i < intervals.length; i++) {
-        // Check if current overlaps with intervals[i]
-        if (current[1] >= intervals[i][0]) {
-            // Merge: extend current interval
-            current[1] = Math.max(current[1], intervals[i][1]);
-        } else {
-            // No overlap: add current to result, move to next
-            result.push(current);
-            current = intervals[i];
-        }
-    }
-    
-    // Don't forget to add the last interval
-    result.push(current);
-    
-    return result;
+  }
+  return res;
 }
 
 // Alternative: Using result array directly
