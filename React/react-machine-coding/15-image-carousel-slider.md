@@ -24,6 +24,60 @@ Build an **image carousel**: show one image at a time; Prev/Next buttons; option
 - `Carousel` – state currentIndex; prev/next handlers; dots; one container for slide (or track with transform).
 - Optional `Slide` component for each image.
 
+## Solution
+
+```jsx
+import { useState, useEffect } from 'react';
+
+const slides = [
+  'https://picsum.photos/400/200?1',
+  'https://picsum.photos/400/200?2',
+  'https://picsum.photos/400/200?3',
+];
+
+function Carousel() {
+  const [index, setIndex] = useState(0);
+  const n = slides.length;
+
+  useEffect(() => {
+    const id = setInterval(() => setIndex((i) => (i + 1) % n), 3000);
+    return () => clearInterval(id);
+  }, [n]);
+
+  return (
+    <div style={{ maxWidth: 400 }}>
+      <div style={{ position: 'relative' }}>
+        <img src={slides[index]} alt="" style={{ width: '100%', display: 'block' }} />
+        <button
+          onClick={() => setIndex((i) => (i - 1 + n) % n)}
+          style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)' }}
+        >
+          ←
+        </button>
+        <button
+          onClick={() => setIndex((i) => (i + 1) % n)}
+          style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)' }}
+        >
+          →
+        </button>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 8 }}>
+        {slides.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => setIndex(i)}
+            style={{ width: 10, height: 10, borderRadius: '50%', background: i === index ? 'blue' : '#ccc' }}
+            aria-label={`Slide ${i + 1}`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default Carousel;
+```
+
 ## React concepts tested
 
 - useState, useEffect (interval, cleanup).

@@ -25,6 +25,87 @@ Build a **list** that either loads more on scroll (infinite scroll) or shows pag
 - `ListItem` – single row/card.
 - Pagination variant: `Pagination` component with prev/next and optional page numbers.
 
+## Solution (Infinite Scroll + Pagination variants)
+
+```jsx
+import { useState, useEffect, useRef } from 'react';
+
+// Mock: 100 items, fetch by page
+const PAGE_SIZE = 10;
+const fetchPage = (page) =>
+  new Promise((r) =>
+    setTimeout(() => r(Array.from({ length: PAGE_SIZE }, (_, i) => ({ id: (page - 1) * PAGE_SIZE + i, name: `Item ${(page - 1) * PAGE_SIZE + i + 1}` }))), 300)
+  );
+
+// --- Infinite Scroll ---
+function InfiniteList() {
+  const [items, setItems] = useState([]);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const sentinelRef = useRef(null);
+
+  useEffect(() => {
+    if (page > 5) return; // mock has 5 pages
+    setLoading(true);
+    fetchPage(page).then((data) => {
+      setItems((prev) => (page === 1 ? data : [...prev, ...data]));
+      setLoading(false);
+    });
+  }, [page]);
+
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !loading && page <= 5) setPage((p) => p + 1);
+      },
+      { threshold: 0.1 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [loading, page]);
+
+  return (
+    <div>
+      <ul>
+        {items.map((item) => (
+          <li key={item.id}>{item.name}</li>
+        ))}
+      </ul>
+      <div ref={sentinelRef} style={{ height: 20 }} />
+      {loading && <p>Loading...</p>}
+    </div>
+  );
+}
+
+// --- Pagination ---
+const ALL_ITEMS = Array.from({ length: 100 }, (_, i) => ({ id: i, name: `Item ${i + 1}` }));
+
+function PaginatedList() {
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+  const totalPages = Math.ceil(ALL_ITEMS.length / pageSize);
+  const start = (page - 1) * pageSize;
+  const pageItems = ALL_ITEMS.slice(start, start + pageSize);
+
+  return (
+    <div>
+      <ul>
+        {pageItems.map((item) => (
+          <li key={item.id}>{item.name}</li>
+        ))}
+      </ul>
+      <p>Page {page} of {totalPages}</p>
+      <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1}>Prev</button>
+      <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages}>Next</button>
+    </div>
+  );
+}
+
+export { InfiniteList, PaginatedList };
+```
+
 ## React concepts tested
 
 - useState, useEffect, useRef (sentinel, AbortController).

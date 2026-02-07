@@ -23,6 +23,49 @@ Build a **Tabs** component: tab headers and one panel of content. Clicking a tab
 - `Tabs` – state or props for active; render tab list (buttons) and one panel.
 - Data: array of `{ id, label, content }` or children with TabPanel components (compound components).
 
+## Solution
+
+```jsx
+import { useState } from 'react';
+
+const tabs = [
+  { id: 'a', label: 'Tab A', content: 'Content for tab A.' },
+  { id: 'b', label: 'Tab B', content: 'Content for tab B.' },
+  { id: 'c', label: 'Tab C', content: 'Content for tab C.' },
+];
+
+function Tabs() {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const active = tabs[activeIndex];
+
+  return (
+    <div>
+      <div role="tablist" style={{ display: 'flex', gap: 4 }}>
+        {tabs.map((tab, i) => (
+          <button
+            key={tab.id}
+            role="tab"
+            aria-selected={i === activeIndex}
+            onClick={() => setActiveIndex(i)}
+            style={{
+              padding: '8px 16px',
+              borderBottom: i === activeIndex ? '2px solid blue' : '2px solid transparent',
+            }}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+      <div role="tabpanel" style={{ padding: 16 }}>
+        {active.content}
+      </div>
+    </div>
+  );
+}
+
+export default Tabs;
+```
+
 ## React concepts tested
 
 - useState or controlled component pattern.

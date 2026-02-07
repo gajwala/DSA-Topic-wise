@@ -25,6 +25,77 @@ Build a **toast notification** system: show small messages that auto-dismiss aft
 - `ToastItem` – one toast; timer to remove self or receives onClose; progress bar optional.
 - `useToast()` – useContext(ToastContext); return { success, error, info } that call addToast.
 
+## Solution
+
+```jsx
+import { useState, useEffect, createContext, useContext } from 'react';
+
+const ToastContext = createContext(null);
+
+function ToastProvider({ children }) {
+  const [toasts, setToasts] = useState([]);
+
+  const addToast = (message, type = 'info') => {
+    const id = Date.now() + Math.random();
+    setToasts((prev) => [...prev, { id, message, type }]);
+    return id;
+  };
+
+  const removeToast = (id) => setToasts((prev) => prev.filter((t) => t.id !== id));
+
+  return (
+    <ToastContext.Provider value={{ addToast, removeToast }}>
+      {children}
+      <div style={{ position: 'fixed', bottom: 16, right: 16, display: 'flex', flexDirection: 'column', gap: 8, zIndex: 9999 }}>
+        {toasts.map((t) => (
+          <ToastItem key={t.id} toast={t} onClose={() => removeToast(t.id)} />
+        ))}
+      </div>
+    </ToastContext.Provider>
+  );
+}
+
+function ToastItem({ toast, onClose }) {
+  useEffect(() => {
+    const id = setTimeout(onClose, 3000);
+    return () => clearTimeout(id);
+  }, [onClose]);
+
+  const colors = { success: '#0a0', error: '#c00', info: '#06c' };
+  return (
+    <div
+      style={{
+        padding: '12px 16px',
+        background: colors[toast.type] || colors.info,
+        color: 'white',
+        borderRadius: 8,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+      }}
+    >
+      <span>{toast.message}</span>
+      <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer' }}>×</button>
+    </div>
+  );
+}
+
+function useToast() {
+  const ctx = useContext(ToastContext);
+  if (!ctx) throw new Error('useToast must be used inside ToastProvider');
+  return {
+    success: (msg) => ctx.addToast(msg, 'success'),
+    error: (msg) => ctx.addToast(msg, 'error'),
+    info: (msg) => ctx.addToast(msg, 'info'),
+  };
+}
+
+// Usage: wrap app with <ToastProvider>, then in any child:
+// const toast = useToast();
+// toast.success('Saved!');
+export { ToastProvider, useToast };
+```
+
 ## React concepts tested
 
 - useState, useEffect (setTimeout, cleanup).

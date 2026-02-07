@@ -23,6 +23,43 @@ Build a **dark mode** toggle: switch between light and dark theme; persist prefe
 - `ThemeToggle` – consumes context; button toggles setTheme.
 - Optional: read prefers-color-scheme and set initial theme.
 
+## Solution
+
+```jsx
+import { useState, useEffect, createContext, useContext } from 'react';
+
+const ThemeContext = createContext(null);
+
+function ThemeProvider({ children }) {
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  return (
+    <ThemeContext.Provider value={{ theme, setTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+}
+
+function ThemeToggle() {
+  const { theme, setTheme } = useContext(ThemeContext);
+  const next = theme === 'light' ? 'dark' : 'light';
+  return (
+    <button onClick={() => setTheme(next)}>
+      {theme === 'light' ? '🌙 Dark' : '☀️ Light'}
+    </button>
+  );
+}
+
+// In index.css or global: [data-theme="dark"] { --bg: #1a1a1a; --text: #eee; }
+// body { background: var(--bg); color: var(--text); }
+export { ThemeProvider, ThemeToggle };
+```
+
 ## React concepts tested
 
 - useState, useEffect (side effect to DOM and localStorage).

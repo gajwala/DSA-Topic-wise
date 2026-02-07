@@ -22,6 +22,41 @@ Build a **Star Rating** component: display a rating (e.g. 3.5) and/or allow the 
 
 - `StarRating` – state for hover; map over max stars; render one `Star` per index with filled/half/empty from value and hover.
 
+## Solution
+
+```jsx
+import { useState } from 'react';
+
+function StarRating({ value = 0, onChange, readOnly = false, max = 5 }) {
+  const [hoverValue, setHoverValue] = useState(null);
+  const displayValue = hoverValue ?? value;
+
+  return (
+    <span role="radiogroup" aria-label="Rating">
+      {Array.from({ length: max }, (_, i) => i + 1).map((star) => (
+        <span
+          key={star}
+          role={readOnly ? undefined : 'radio'}
+          aria-checked={displayValue >= star}
+          onClick={() => !readOnly && onChange?.(star)}
+          onMouseEnter={() => !readOnly && setHoverValue(star)}
+          onMouseLeave={() => !readOnly && setHoverValue(null)}
+          style={{ cursor: readOnly ? 'default' : 'pointer', color: displayValue >= star ? 'gold' : '#ccc' }}
+        >
+          ★
+        </span>
+      ))}
+    </span>
+  );
+}
+
+// Usage (controlled):
+// const [rating, setRating] = useState(0);
+// <StarRating value={rating} onChange={setRating} />
+// <StarRating value={3.5} readOnly />  (display only)
+export default StarRating;
+```
+
 ## React concepts tested
 
 - Controlled component (value + onChange).

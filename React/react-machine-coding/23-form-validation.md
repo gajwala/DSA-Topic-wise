@@ -23,6 +23,63 @@ Build a **form** (e.g. signup: name, email, password, confirm password) with **v
 - `Form` – formData, errors, touched; validate function; render inputs with error messages; submit button.
 - Optional reusable `Input` that receives error, touched, and shows message.
 
+## Solution
+
+```jsx
+import { useState } from 'react';
+
+function validate(formData) {
+  const errors = {};
+  if (!formData.name?.trim()) errors.name = 'Name is required';
+  if (!formData.email?.trim()) errors.email = 'Email is required';
+  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) errors.email = 'Invalid email';
+  if (!formData.password?.trim()) errors.password = 'Password is required';
+  else if (formData.password.length < 8) errors.password = 'Min 8 characters';
+  if (formData.password !== formData.confirm) errors.confirm = 'Passwords must match';
+  return errors;
+}
+
+function SignupForm() {
+  const [formData, setFormData] = useState({ name: '', email: '', password: '', confirm: '' });
+  const [errors, setErrors] = useState({});
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const e2 = validate(formData);
+    setErrors(e2);
+    if (Object.keys(e2).length === 0) {
+      console.log('Submitted', formData);
+    }
+  };
+
+  const update = (field, value) => setFormData((prev) => ({ ...prev, [field]: value }));
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <div>
+        <input placeholder="Name" value={formData.name} onChange={(e) => update('name', e.target.value)} />
+        {errors.name && <span style={{ color: 'red' }}>{errors.name}</span>}
+      </div>
+      <div>
+        <input placeholder="Email" type="email" value={formData.email} onChange={(e) => update('email', e.target.value)} />
+        {errors.email && <span style={{ color: 'red' }}>{errors.email}</span>}
+      </div>
+      <div>
+        <input placeholder="Password" type="password" value={formData.password} onChange={(e) => update('password', e.target.value)} />
+        {errors.password && <span style={{ color: 'red' }}>{errors.password}</span>}
+      </div>
+      <div>
+        <input placeholder="Confirm password" type="password" value={formData.confirm} onChange={(e) => update('confirm', e.target.value)} />
+        {errors.confirm && <span style={{ color: 'red' }}>{errors.confirm}</span>}
+      </div>
+      <button type="submit">Sign up</button>
+    </form>
+  );
+}
+
+export default SignupForm;
+```
+
 ## React concepts tested
 
 - Controlled inputs, form state.

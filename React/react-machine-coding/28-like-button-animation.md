@@ -22,6 +22,43 @@ Build a **like** (or heart) button: click toggles liked state; show count; **ani
 
 - `LikeButton` – state liked, count; icon; optional animation wrapper or particles; onClick toggle.
 
+## Solution
+
+```jsx
+import { useState } from 'react';
+
+function LikeButton() {
+  const [liked, setLiked] = useState(false);
+  const [count, setCount] = useState(0);
+
+  const toggle = () => {
+    setLiked((l) => !l);
+    setCount((c) => (liked ? c - 1 : c + 1));
+  };
+
+  return (
+    <button
+      onClick={toggle}
+      style={{
+        background: 'none',
+        border: 'none',
+        cursor: 'pointer',
+        fontSize: 24,
+        transition: 'transform 0.2s',
+      }}
+      className={liked ? 'liked' : ''}
+      onMouseDown={(e) => (e.currentTarget.style.transform = 'scale(0.9)')}
+      onMouseUp={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+    >
+      {liked ? '❤️' : '🤍'} <span>{count}</span>
+    </button>
+  );
+}
+
+// Optional CSS for bounce: .liked { animation: bounce 0.3s; } @keyframes bounce { 50% { transform: scale(1.2); } }
+export default LikeButton;
+```
+
 ## React concepts tested
 
 - useState, toggle and count update.

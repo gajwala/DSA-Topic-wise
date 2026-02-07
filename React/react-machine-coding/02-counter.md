@@ -24,6 +24,52 @@ Build a **Counter** with increment, decrement, reset, and an optional step input
 
 - Single `Counter` component with state and buttons; or `Counter` + `CounterDisplay` / `CounterControls` for clarity.
 
+## Solution
+
+```jsx
+import { useState } from 'react';
+
+const INITIAL = 0;
+const MIN = -100;
+const MAX = 100;
+
+function Counter() {
+  const [count, setCount] = useState(INITIAL);
+  const [step, setStep] = useState(1);
+
+  const stepNum = Number(step) || 1;
+  const inc = () => setCount((c) => Math.min(MAX, c + stepNum));
+  const dec = () => setCount((c) => Math.max(MIN, c - stepNum));
+  const reset = () => setCount(INITIAL);
+
+  return (
+    <div>
+      <h2>{count}</h2>
+      <div>
+        <button onClick={dec} disabled={count <= MIN}>
+          −
+        </button>
+        <button onClick={inc} disabled={count >= MAX}>
+          +
+        </button>
+      </div>
+      <label>
+        Step:{' '}
+        <input
+          type="number"
+          min="1"
+          value={step}
+          onChange={(e) => setStep(e.target.value)}
+        />
+      </label>
+      <button onClick={reset}>Reset</button>
+    </div>
+  );
+}
+
+export default Counter;
+```
+
 ## React concepts tested
 
 - useState, functional updates (`setCount(c => c + 1)`).

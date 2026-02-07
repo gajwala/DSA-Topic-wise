@@ -26,6 +26,64 @@ Build a **Tic Tac Toe** game (3×3 grid). Two players (X and O) take turns. Dete
 - `Board` – receives squares and onClick handler; renders 9 `Cell`s.
 - `Cell` – one button; value from squares[i]; onClick calls parent with index.
 
+## Solution
+
+```jsx
+import { useState } from 'react';
+
+function getWinner(squares) {
+  const lines = [
+    [0, 1, 2], [3, 4, 5], [6, 7, 8],
+    [0, 3, 6], [1, 4, 7], [2, 5, 8],
+    [0, 4, 8], [2, 4, 6],
+  ];
+  for (const [a, b, c] of lines) {
+    if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
+      return squares[a];
+    }
+  }
+  return null;
+}
+
+function Game() {
+  const [squares, setSquares] = useState(Array(9).fill(null));
+  const [xIsNext, setXIsNext] = useState(true);
+
+  const winner = getWinner(squares);
+  const draw = squares.every(Boolean) && !winner;
+  const status = winner ? `${winner} wins!` : draw ? 'Draw' : `Next: ${xIsNext ? 'X' : 'O'}`;
+
+  const handleClick = (i) => {
+    if (squares[i] || winner) return;
+    const next = [...squares];
+    next[i] = xIsNext ? 'X' : 'O';
+    setSquares(next);
+    setXIsNext(!xIsNext);
+  };
+
+  const reset = () => {
+    setSquares(Array(9).fill(null));
+    setXIsNext(true);
+  };
+
+  return (
+    <div>
+      <p>{status}</p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', width: '150px' }}>
+        {squares.map((val, i) => (
+          <button key={i} onClick={() => handleClick(i)} disabled={!!winner || !!val}>
+            {val || '\u00A0'}
+          </button>
+        ))}
+      </div>
+      <button onClick={reset}>Reset</button>
+    </div>
+  );
+}
+
+export default Game;
+```
+
 ## React concepts tested
 
 - useState, immutable update (copy array, then set new state).

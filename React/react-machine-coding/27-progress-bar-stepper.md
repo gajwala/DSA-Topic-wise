@@ -22,6 +22,51 @@ Build a **progress bar** (percentage 0–100) and/or a **stepper** (horizontal s
 - `ProgressBar` – value prop; render bar with width or transform; optional label.
 - `Stepper` – steps: string[], currentStep: number; map to step indicators and optional connector.
 
+## Solution
+
+```jsx
+function ProgressBar({ value = 0, max = 100 }) {
+  const pct = Math.min(100, Math.max(0, (value / max) * 100));
+  return (
+    <div style={{ width: '100%', height: 8, background: '#eee', borderRadius: 4, overflow: 'hidden' }}>
+      <div style={{ width: pct + '%', height: '100%', background: 'blue', borderRadius: 4, transition: 'width 0.3s' }} />
+    </div>
+  );
+}
+
+function Stepper({ steps, currentStep }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+      {steps.map((label, i) => (
+        <div key={i} style={{ display: 'flex', alignItems: 'center' }}>
+          <div
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: '50%',
+              background: i < currentStep ? 'green' : i === currentStep ? 'blue' : '#eee',
+              color: i <= currentStep ? 'white' : '#666',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            {i < currentStep ? '✓' : i + 1}
+          </div>
+          {i < steps.length - 1 && (
+            <div style={{ width: 40, height: 2, background: i < currentStep ? 'green' : '#eee' }} />
+          )}
+          <span style={{ marginLeft: 4 }}>{label}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Usage: <ProgressBar value={60} />  <Stepper steps={['One', 'Two', 'Three']} currentStep={1} />
+export { ProgressBar, Stepper };
+```
+
 ## React concepts tested
 
 - Props (value, currentStep).

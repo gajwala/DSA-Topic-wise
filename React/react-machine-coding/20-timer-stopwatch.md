@@ -22,6 +22,70 @@ Build a **timer** (countdown from N minutes) or **stopwatch** (count up from 0).
 
 - `Stopwatch` or `Timer` – state (time, isRunning); display; Start/Pause/Reset buttons; useEffect for interval.
 
+## Solution
+
+```jsx
+import { useState, useEffect } from 'react';
+
+function format(ms) {
+  const totalSec = Math.floor(ms / 1000);
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+function Stopwatch() {
+  const [elapsed, setElapsed] = useState(0);
+  const [running, setRunning] = useState(false);
+
+  useEffect(() => {
+    if (!running) return;
+    const id = setInterval(() => setElapsed((e) => e + 1000), 1000);
+    return () => clearInterval(id);
+  }, [running]);
+
+  return (
+    <div>
+      <p style={{ fontSize: 32 }}>{format(elapsed)}</p>
+      <button onClick={() => setRunning(true)}>Start</button>
+      <button onClick={() => setRunning(false)}>Pause</button>
+      <button onClick={() => { setElapsed(0); setRunning(false); }}>Reset</button>
+    </div>
+  );
+}
+
+function Timer() {
+  const [remaining, setRemaining] = useState(5 * 60 * 1000); // 5 min
+  const [running, setRunning] = useState(false);
+
+  useEffect(() => {
+    if (!running) return;
+    const id = setInterval(() => {
+      setRemaining((r) => {
+        if (r <= 1000) {
+          setRunning(false);
+          alert('Time up!');
+          return 0;
+        }
+        return r - 1000;
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, [running]);
+
+  return (
+    <div>
+      <p>{format(remaining)}</p>
+      <button onClick={() => setRunning(true)} disabled={remaining === 0}>Start</button>
+      <button onClick={() => setRunning(false)}>Pause</button>
+      <button onClick={() => setRemaining(5 * 60 * 1000)}>Reset (5 min)</button>
+    </div>
+  );
+}
+
+export { Stopwatch, Timer };
+```
+
 ## React concepts tested
 
 - useState, useEffect (setInterval, cleanup).

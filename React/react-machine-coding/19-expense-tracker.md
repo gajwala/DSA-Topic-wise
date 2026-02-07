@@ -24,6 +24,74 @@ Build an **expense tracker**: add income/expense with amount and description (an
 - `ExpenseTracker` – state transactions; form; balance; list of TransactionRow with delete.
 - Optional Summary component (income total, expense total).
 
+## Solution
+
+```jsx
+import { useState, useEffect } from 'react';
+
+const KEY = 'expense-transactions';
+
+function ExpenseTracker() {
+  const [transactions, setTransactions] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem(KEY) || '[]');
+    } catch {
+      return [];
+    }
+  });
+  const [amount, setAmount] = useState('');
+  const [description, setDescription] = useState('');
+  const [type, setType] = useState('expense');
+
+  useEffect(() => {
+    localStorage.setItem(KEY, JSON.stringify(transactions));
+  }, [transactions]);
+
+  const income = transactions.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+  const expense = transactions.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+  const balance = income - expense;
+
+  const add = (e) => {
+    e.preventDefault();
+    const amt = Number(amount);
+    if (!amt || amt <= 0) return;
+    setTransactions((prev) => [
+      ...prev,
+      { id: Date.now(), amount: amt, description: description.trim() || '—', type },
+    ]);
+    setAmount('');
+    setDescription('');
+  };
+
+  const remove = (id) => setTransactions((prev) => prev.filter((t) => t.id !== id));
+
+  return (
+    <div>
+      <h3>Balance: ${balance.toFixed(2)}</h3>
+      <form onSubmit={add}>
+        <input type="number" step="0.01" placeholder="Amount" value={amount} onChange={(e) => setAmount(e.target.value)} required />
+        <input placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} />
+        <select value={type} onChange={(e) => setType(e.target.value)}>
+          <option value="income">Income</option>
+          <option value="expense">Expense</option>
+        </select>
+        <button type="submit">Add</button>
+      </form>
+      <ul style={{ listStyle: 'none', padding: 0 }}>
+        {transactions.map((t) => (
+          <li key={t.id} style={{ color: t.type === 'income' ? 'green' : 'red', marginTop: 4 }}>
+            {t.description} — ${t.amount.toFixed(2)}
+            <button onClick={() => remove(t.id)}>×</button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+export default ExpenseTracker;
+```
+
 ## React concepts tested
 
 - useState, derived state (balance).

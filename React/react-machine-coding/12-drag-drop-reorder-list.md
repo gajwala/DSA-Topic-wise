@@ -23,6 +23,65 @@ Build a **list** of items that the user can **reorder by dragging** (drag handle
 - `SortableList` – state items; map to `SortableItem` with draggable, drag handlers, and drop target logic.
 - `SortableItem` – single row; receives item, index, isDragging; drag events call parent with index.
 
+## Solution
+
+```jsx
+import { useState } from 'react';
+
+const initialItems = ['Apple', 'Banana', 'Cherry', 'Date', 'Elderberry'].map((label, i) => ({ id: i + 1, label }));
+
+function SortableList() {
+  const [items, setItems] = useState(initialItems);
+  const [draggedIndex, setDraggedIndex] = useState(null);
+
+  const handleDragStart = (e, index) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', index);
+  };
+  const handleDragOver = (e) => e.preventDefault();
+  const handleDrop = (e, dropIndex) => {
+    e.preventDefault();
+    const dragIndex = Number(e.dataTransfer.getData('text/plain'));
+    if (dragIndex === dropIndex || dragIndex === -1) {
+      setDraggedIndex(null);
+      return;
+    }
+    setItems((prev) => {
+      const next = [...prev];
+      const [removed] = next.splice(dragIndex, 1);
+      next.splice(dropIndex, 0, removed);
+      return next;
+    });
+    setDraggedIndex(null);
+  };
+
+  return (
+    <ul style={{ listStyle: 'none', padding: 0 }}>
+      {items.map((item, i) => (
+        <li
+          key={item.id}
+          draggable
+          onDragStart={(e) => handleDragStart(e, i)}
+          onDragOver={handleDragOver}
+          onDrop={(e) => handleDrop(e, i)}
+          style={{
+            padding: 8,
+            margin: 4,
+            background: draggedIndex === i ? '#ddd' : '#f5f5f5',
+            cursor: 'grab',
+          }}
+        >
+          {item.label}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+export default SortableList;
+```
+
 ## React concepts tested
 
 - useState, immutable array update (reorder).

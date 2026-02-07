@@ -26,6 +26,78 @@ Build a **Modal** (dialog): overlay + content box. Open via button; close via cl
 - `Modal` – open state or controlled (isOpen, onClose); portal; overlay + content box; close handlers.
 - `ModalHeader`, `ModalBody`, `ModalFooter` – optional subcomponents for layout.
 
+## Solution
+
+```jsx
+import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
+
+function Modal({ title, children, onClose }) {
+  const contentRef = useRef(null);
+
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (e.key === 'Escape') onClose?.();
+    };
+    document.addEventListener('keydown', handleKey);
+    document.body.style.overflow = 'hidden';
+    contentRef.current?.focus();
+    return () => {
+      document.removeEventListener('keydown', handleKey);
+      document.body.style.overflow = '';
+    };
+  }, [onClose]);
+
+  return createPortal(
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-title"
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0,0,0,0.5)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1000,
+      }}
+      onClick={(e) => e.target === e.currentTarget && onClose?.()}
+    >
+      <div
+        ref={contentRef}
+        tabIndex={-1}
+        style={{ background: 'white', padding: 24, borderRadius: 8, minWidth: 300 }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <h2 id="modal-title">{title}</h2>
+          <button onClick={onClose} aria-label="Close">×</button>
+        </div>
+        {children}
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+function ModalDemo() {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button onClick={() => setOpen(true)}>Open modal</button>
+      {open && (
+        <Modal title="Example" onClose={() => setOpen(false)}>
+          <p>Modal body. Click outside or press Escape to close.</p>
+        </Modal>
+      )}
+    </>
+  );
+}
+
+export { Modal, ModalDemo };
+```
+
 ## React concepts tested
 
 - useState, useEffect (listeners, cleanup).

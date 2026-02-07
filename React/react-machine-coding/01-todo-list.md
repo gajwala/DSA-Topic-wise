@@ -27,6 +27,134 @@ Build a **Todo List** where users can add, toggle complete, edit, and delete tas
 - `TodoItem` – checkbox, text/edit input, delete button; callback props for toggle, edit, delete.
 - Optional: `TodoInput` for the add form.
 
+## Solution
+
+```jsx
+import { useState, useMemo, useEffect } from 'react';
+
+const STORAGE_KEY = 'todos';
+
+function TodoApp() {
+  const [todos, setTodos] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    } catch {
+      return [];
+    }
+  });
+  const [filter, setFilter] = useState('all');
+  const [editingId, setEditingId] = useState(null);
+  const [inputText, setInputText] = useState('');
+
+  const filteredTodos = useMemo(() => {
+    if (filter === 'active') return todos.filter((t) => !t.done);
+    if (filter === 'completed') return todos.filter((t) => t.done);
+    return todos;
+  }, [todos, filter]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
+  }, [todos]);
+
+  const addTodo = () => {
+    const text = inputText.trim();
+    if (!text) return;
+    setTodos((prev) => [...prev, { id: crypto.randomUUID(), text, done: false }]);
+    setInputText('');
+  };
+
+  const toggleTodo = (id) => {
+    setTodos((prev) => prev.map((t) => (t.id === id ? { ...t, done: !t.done } : t)));
+  };
+
+  const updateTodo = (id, text) => {
+    if (!text.trim()) return;
+    setTodos((prev) => prev.map((t) => (t.id === id ? { ...t, text: text.trim() } : t)));
+    setEditingId(null);
+  };
+
+  const deleteTodo = (id) => setTodos((prev) => prev.filter((t) => t.id !== id));
+
+  const clearCompleted = () => setTodos((prev) => prev.filter((t) => !t.done));
+
+  return (
+    <div>
+      <div>
+        <input
+          value={inputText}
+          onChange={(e) => setInputText(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && addTodo()}
+          placeholder="Add todo"
+        />
+        <button onClick={addTodo}>Add</button>
+      </div>
+      <div>
+        {['all', 'active', 'completed'].map((f) => (
+          <button key={f} onClick={() => setFilter(f)} style={{ fontWeight: filter === f ? 'bold' : 'normal' }}>
+            {f}
+          </button>
+        ))}
+      </div>
+      <ul>
+        {filteredTodos.map((todo) => (
+          <TodoItem
+            key={todo.id}
+            todo={todo}
+            isEditing={editingId === todo.id}
+            onToggle={() => toggleTodo(todo.id)}
+            onEdit={() => setEditingId(todo.id)}
+            onSave={(text) => updateTodo(todo.id, text)}
+            onCancel={() => setEditingId(null)}
+            onDelete={() => deleteTodo(todo.id)}
+          />
+        ))}
+      </ul>
+      <button onClick={clearCompleted}>Clear completed</button>
+    </div>
+  );
+}
+
+function TodoItem({ todo, isEditing, onToggle, onEdit, onSave, onCancel, onDelete }) {
+  const [editText, setEditText] = useState(todo.text);
+  useEffect(() => {
+    if (isEditing) setEditText(todo.text);
+  }, [isEditing, todo.text]);
+
+  const handleSave = () => {
+    onSave(editText);
+  };
+
+  return (
+    <li>
+      <input type="checkbox" checked={todo.done} onChange={onToggle} />
+      {isEditing ? (
+        <>
+          <input
+            value={editText}
+            onChange={(e) => setEditText(e.target.value)}
+            onBlur={handleSave}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleSave();
+              if (e.key === 'Escape') onCancel();
+            }}
+            autoFocus
+          />
+        </>
+      ) : (
+        <>
+          <span onDoubleClick={onEdit} style={{ textDecoration: todo.done ? 'line-through' : 'none' }}>
+            {todo.text}
+          </span>
+          <button onClick={onDelete}>×</button>
+        </>
+      )}
+    </li>
+  );
+}
+
+export default TodoApp;
+```
+
 ## React concepts tested
 
 - useState, useMemo, useEffect.

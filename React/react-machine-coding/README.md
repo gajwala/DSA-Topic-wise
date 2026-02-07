@@ -43,8 +43,9 @@
 
 ## How to use
 
-- Pick a question, read the `.md` file for requirements and approach.
-- Implement in a fresh React app (Vite/CRA) without looking at the solution section until you’re done.
+- Pick a question, read the `.md` file for **requirements** and **approach**.
+- Implement in a fresh React app (Vite/CRA) **without** looking at the **Solution** section until you’re done.
+- Each file includes a **Solution** section with working React code you can copy or compare against.
 - Time yourself (e.g. 45–60 min) to simulate the round.
 
 ## Concepts commonly tested

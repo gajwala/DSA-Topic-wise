@@ -24,6 +24,67 @@ Build an **emoji picker** or **reaction picker**: click a trigger (e.g. smiley i
 - `EmojiPicker` – state open; trigger button; popover (portal or positioned div) with grid of emoji buttons; onSelect callback.
 - Optional: `useClickOutside` hook for close.
 
+## Solution
+
+```jsx
+import { useState, useRef, useEffect } from 'react';
+
+const EMOJIS = ['😀', '😃', '😄', '😁', '😂', '🤣', '😊', '😇', '🙂', '😉', '😍', '🥰', '👍', '👎', '❤️', '🔥'];
+
+function EmojiPicker({ onSelect }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const fn = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('click', fn);
+    return () => document.removeEventListener('click', fn);
+  }, []);
+
+  useEffect(() => {
+    const fn = (e) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('keydown', fn);
+    return () => document.removeEventListener('keydown', fn);
+  }, []);
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button onClick={() => setOpen((o) => !o)}>😀 Pick emoji</button>
+      {open && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            marginTop: 4,
+            padding: 8,
+            background: 'white',
+            border: '1px solid #ccc',
+            borderRadius: 8,
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, 1fr)',
+            gap: 4,
+            zIndex: 1000,
+          }}
+        >
+          {EMOJIS.map((emoji, i) => (
+            <button
+              key={i}
+              onClick={() => { onSelect?.(emoji); setOpen(false); }}
+              style={{ fontSize: 24, padding: 4, background: 'none', border: 'none', cursor: 'pointer' }}
+            >
+              {emoji}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default EmojiPicker;
+```
+
 ## React concepts tested
 
 - useState (open), useRef (trigger/popover).
