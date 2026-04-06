@@ -246,7 +246,7 @@ Data Stores
 
 ### Real-time location tracking
 
-![Location tracking pipeline](diagrams/sv_location.svg)
+![Location tracking pipeline](diagrams/svg_location.svg)
 
 ---
 
