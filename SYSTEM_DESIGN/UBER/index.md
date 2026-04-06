@@ -203,7 +203,7 @@ TTL:   86400 seconds (24 hours)
 
 ## Step 5 — High-Level Architecture
 
-![High-level architecture](diagrams/architecture.svg)
+![High-level architecture](diagrams/svg_architecture.svg)
 
 ```
 Clients
@@ -242,11 +242,11 @@ Data Stores
 
 ### Ride request flow
 
-![Ride request flow](diagrams/ride-request-flow.svg)
+![Ride request flow](diagrams/svg_ride-request-flow.svg)
 
 ### Real-time location tracking
 
-![Location tracking pipeline](diagrams/location-tracking.svg)
+![Location tracking pipeline](diagrams/sv_location-tracking.svg)
 
 ---
 
