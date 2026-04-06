@@ -242,11 +242,11 @@ Data Stores
 
 ### Ride request flow
 
-![Ride request flow](diagrams/svg_ride-request-flow.svg)
+![Ride request flow](diagrams/svg_ride_flow.svg)
 
 ### Real-time location tracking
 
-![Location tracking pipeline](diagrams/sv_location-tracking.svg)
+![Location tracking pipeline](diagrams/sv_location.svg)
 
 ---
 
