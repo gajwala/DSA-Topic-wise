@@ -376,27 +376,288 @@ await analytics.init();
 ## Pseudocode Summary
 
 ```js
-track(event):
-  enriched = addMetadata(event)
-  queue.push(enriched)
-  persist(enriched)
+class LocalStorageQueueStore {
+  constructor(key = "analytics_queue") {
+    this.key = key;
+  }
 
-  if queue.length >= batchSize:
-    schedule flush
-  else:
-    ensure timer exists
+  async load() {
+    try {
+      const raw = localStorage.getItem(this.key);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  }
 
-flush():
-  if already flushing or queue empty:
-    return
+  async save(events) {
+    localStorage.setItem(this.key, JSON.stringify(events));
+  }
 
-  take oldest batch
-  send batch to server
+  async append(event) {
+    const events = await this.load();
+    events.push(event);
+    await this.save(events);
+  }
 
-  if success:
-    remove sent events from memory and storage
-  else:
-    keep events and retry later
+  async removeByIds(ids) {
+    const idSet = new Set(ids);
+    const events = await this.load();
+    const filtered = events.filter(event => !idSet.has(event.id));
+    await this.save(filtered);
+  }
+
+  async replaceAll(events) {
+    await this.save(events);
+  }
+}
+
+class IndexedDBQueueStore {
+  constructor(dbName = "AnalyticsDB", storeName = "queue") {
+    this.dbName = dbName;
+    this.storeName = storeName;
+    this.dbPromise = this.open();
+  }
+
+  open() {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(this.dbName, 1);
+
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        if (!db.objectStoreNames.contains(this.storeName)) {
+          db.createObjectStore(this.storeName, { keyPath: "id" });
+        }
+      };
+
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async withStore(mode, callback) {
+    const db = await this.dbPromise;
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(this.storeName, mode);
+      const store = tx.objectStore(this.storeName);
+      const result = callback(store);
+
+      tx.oncomplete = () => resolve(result);
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    });
+  }
+
+  async load() {
+    const db = await this.dbPromise;
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(this.storeName, "readonly");
+      const store = tx.objectStore(this.storeName);
+      const request = store.getAll();
+
+      request.onsuccess = () => resolve(request.result || []);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async append(event) {
+    await this.withStore("readwrite", store => {
+      store.put(event);
+    });
+  }
+
+  async removeByIds(ids) {
+    await this.withStore("readwrite", store => {
+      ids.forEach(id => store.delete(id));
+    });
+  }
+
+  async replaceAll(events) {
+    const db = await this.dbPromise;
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(this.storeName, "readwrite");
+      const store = tx.objectStore(this.storeName);
+      store.clear();
+
+      events.forEach(event => store.put(event));
+
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    });
+  }
+}
+
+class AnalyticsClient {
+  constructor({
+    endpoint,
+    batchSize = 10,
+    flushInterval = 5000,
+    store,
+    fetchImpl = fetch,
+    maxRetries = 3,
+    retryBaseDelay = 1000
+  }) {
+    if (!endpoint) throw new Error("endpoint is required");
+    if (!store) throw new Error("store is required");
+
+    this.endpoint = endpoint;
+    this.batchSize = batchSize;
+    this.flushInterval = flushInterval;
+    this.store = store;
+    this.fetchImpl = fetchImpl;
+    this.maxRetries = maxRetries;
+    this.retryBaseDelay = retryBaseDelay;
+
+    this.queue = [];
+    this.timer = null;
+    this.flushing = false;
+    this.started = false;
+  }
+
+  async init() {
+    this.queue = await this.store.load();
+    this.started = true;
+
+    if (this.queue.length > 0) {
+      this.scheduleFlush();
+    }
+
+    this.attachUnloadHandler();
+  }
+
+  createEvent(payload) {
+    return {
+      id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      timestamp: new Date().toISOString(),
+      payload
+    };
+  }
+
+  async track(blob) {
+    if (!this.started) {
+      throw new Error("Call init() before track()");
+    }
+
+    const event = this.createEvent(blob);
+
+    this.queue.push(event);
+    await this.store.append(event);
+
+    if (this.queue.length >= this.batchSize) {
+      await this.flush();
+    } else {
+      this.scheduleFlush();
+    }
+  }
+
+  scheduleFlush() {
+    if (this.timer) return;
+
+    this.timer = setTimeout(async () => {
+      this.timer = null;
+      await this.flush();
+    }, this.flushInterval);
+  }
+
+  cancelFlushTimer() {
+    if (this.timer) {
+      clearTimeout(this.timer);
+      this.timer = null;
+    }
+  }
+
+  async flush() {
+    if (this.flushing) return;
+    if (this.queue.length === 0) return;
+
+    this.flushing = true;
+    this.cancelFlushTimer();
+
+    try {
+      while (this.queue.length > 0) {
+        const batch = this.queue.slice(0, this.batchSize);
+        await this.sendWithRetry(batch);
+
+        const ids = batch.map(event => event.id);
+        this.queue = this.queue.slice(batch.length);
+        await this.store.removeByIds(ids);
+      }
+    } catch (error) {
+      console.error("Flush failed:", error);
+      if (this.queue.length > 0) {
+        this.scheduleFlush();
+      }
+    } finally {
+      this.flushing = false;
+    }
+  }
+
+  async sendWithRetry(batch) {
+    let attempt = 0;
+
+    while (attempt <= this.maxRetries) {
+      try {
+        const response = await this.fetchImpl(this.endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ events: batch })
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        return;
+      } catch (error) {
+        attempt += 1;
+
+        if (attempt > this.maxRetries) {
+          throw error;
+        }
+
+        const delay = this.retryBaseDelay * Math.pow(2, attempt - 1);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+
+  attachUnloadHandler() {
+    window.addEventListener("beforeunload", () => {
+      if (this.queue.length === 0) return;
+      if (!navigator.sendBeacon) return;
+
+      const batch = this.queue.slice(0, this.batchSize);
+      const payload = JSON.stringify({ events: batch });
+      navigator.sendBeacon(this.endpoint, payload);
+    });
+  }
+}
+
+(async ()=>{
+const analytics = new AnalyticsClient({
+  endpoint: "/api/analytics",
+  batchSize: 20,
+  flushInterval: 5000,
+  store: new IndexedDBQueueStore()
+});
+
+await analytics.init();
+
+await analytics.track({
+  type: "button_click",
+  buttonId: "signup"
+});
+
+await analytics.track({
+  type: "page_view",
+  page: "/pricing"
+});
+})()
+
+
 ```
 
 ---
