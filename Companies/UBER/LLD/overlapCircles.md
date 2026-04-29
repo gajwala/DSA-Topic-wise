@@ -4,51 +4,57 @@ import { useRef, useState, useEffect } from "react";
 export default function App() {
   const canvasRef = useRef(null);
 
-  const [circles, setCircles] = useState([
-    {
-      id: "left",
-      width: 0,
-      height: 0,
-      startX: 0,
-      startY: 0,
-      x: 0,
-      y: 0,
-      backgroundColor: "red",
-    },
-    {
-      id: "right",
-      width: 0,
-      height: 0,
-      startX: 0,
-      startY: 0,
-      x: 0,
-      y: 0,
-      backgroundColor: "red",
-    },
-  ]);
+  // const [circles, setCircles] = useState([
+  //   {
+  //     id: "left",
+  //     width: 0,
+  //     height: 0,
+  //     startX: 0,
+  //     startY: 0,
+  //     x: 0,
+  //     y: 0,
+  //     backgroundColor: "red",
+  //   },
+  //   {
+  //     id: "right",
+  //     width: 0,
+  //     height: 0,
+  //     startX: 0,
+  //     startY: 0,
+  //     x: 0,
+  //     y: 0,
+  //     backgroundColor: "red",
+  //   },
+  // ]);
+
+  const [circles, setCircles] = useState([]);
 
   const [currentCircleId, setCurrentCircleId] = useState(null);
 
   function mouseDownHandler(e) {
-    const id = e.button === 0 ? "left" : "right";
-    setCurrentCircleId(id);
+    const newCircle = {
+      id: Date.now(),
+      startX: e.clientX,
+      startY: e.clientY,
+      x: e.clientX,
+      y: e.clientY,
+      width: 0,
+      height: 0,
+      backgroundColor: "red",
+    };
 
-    setCircles((prev) =>
-      prev.map((c) =>
-        c.id === id
-          ? { ...c, startX: e.clientX, startY: e.clientY, width: 0, height: 0 }
-          : c
-      )
-    );
+    setCurrentCircleId(newCircle.id);
+    setCircles((prev) => [...prev, newCircle]);
   }
 
   function mouseMoveHandler(e) {
     if (!currentCircleId) return;
 
-    const updated = circles.map((circle) => {
+    let updatedCircles = circles.map((circle) => {
       if (circle.id === currentCircleId) {
         const dx = e.clientX - circle.startX;
         const dy = e.clientY - circle.startY;
+
         const size = Math.max(Math.abs(dx), Math.abs(dy));
 
         return {
@@ -62,15 +68,24 @@ export default function App() {
       return circle;
     });
 
-    const overlap = elementsOverlap(updated[0], updated[1]);
+    const activeCircle = updatedCircles.find((c) => c.id === currentCircleId);
 
-    setCircles(
-      updated.map((c) =>
-        c.id === currentCircleId
-          ? { ...c, backgroundColor: overlap ? "blue" : "red" }
-          : c
-      )
+    // 🔥 check overlap with ALL other circles
+    const isOverlapping = updatedCircles.some(
+      (circle) =>
+        circle.id !== currentCircleId && elementsOverlap(activeCircle, circle)
     );
+
+    updatedCircles = updatedCircles.map((circle) =>
+      circle.id === currentCircleId
+        ? {
+            ...circle,
+            backgroundColor: isOverlapping ? "blue" : "red",
+          }
+        : circle
+    );
+
+    setCircles(updatedCircles);
   }
 
   function onMouseUpHandler() {
